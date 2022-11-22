@@ -6,14 +6,17 @@ from aiohttp.web import (
     Response, Request, Application, RouteTableDef
 )
 
+from server.handlers import HANDLERS
+
 
 class Server:
 
-    route: RouteTableDef = RouteTableDef()
+    app: Application
 
     def __init__(self):
         self.host = "localhost"
         self.port = 8080
+        self.app = Application()
 
     @route.get('/get')
     async def echo(self) -> Response:
@@ -59,10 +62,10 @@ class Server:
             json.dump(content, f, indent=2)
         return Response(text=f'Delete request: {data}')
 
-    async def server(self):
-        app = Application()
-        app.add_routes(self.route)
-        return app
+    def register_handlers(self):
+        for handler in HANDLERS:
+            self.app.router.add_route('*', handler.URL_PATH, handler)
 
     def run(self):
-        web.run_app(self.server(), host=self.host, port=self.port)
+        self.register_handlers()
+        web.run_app(self.app, host=self.host, port=self.port)
